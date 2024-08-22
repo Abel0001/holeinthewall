@@ -10,7 +10,9 @@ https://sprig.hackclub.com/gallery/getting_started
 
 const player = "p"
 const filled = "w"
-
+const regen = "r"
+var roundCounter = 0;
+var powerUps
 setLegend(
   [player, bitmap`
 1111111111111111
@@ -29,6 +31,24 @@ setLegend(
 130..........031
 1333333333333331
 1111111111111111`],
+    [regen, bitmap`
+................
+................
+................
+.....444444.....
+....4......4....
+...4............
+...4........4...
+...4.......444..
+...4......4.4.4.
+...4........4...
+...4........4...
+....4......4....
+.....444444.....
+................
+................
+................`],
+
   [filled, bitmap`
 1111111111111111
 1CCCCCCCCCCCCCC1
@@ -49,38 +69,68 @@ setLegend(
 )
 
 setSolids([])
-
 var level = map`
-`
-level = ``
+.....
+.....
+.....
+.....
+.....
+.....`
 
-var playerPos = Math.floor(Math.random() * 36);
-i(playerPos)
-var roundCounter = 0;
+function generateLevel() {
+  clearText()
+  var powerUpCount = 0;
+  roundCounter++;
+  difficulty += 1;
+  level = map`
+.....
+.....
+.....
+.....
+.....
+.....`
+  setMap(level)
+  for (var i = 0; i < 30; i++) {
+    if (playerPos == i) {
+
+      addSprite(i % 5, Math.floor(i / 5), player)
+
+      //continue;
+    }
+    //  if (i % 6 == 0) {
+    //   level += "\n";
+    //   continue;
+    // }
+
+    if (Math.floor(Math.random() * 20 > difficulty)) {
+      addSprite(i % 5, Math.floor(i / 5), filled)
+      if (powerUpCount < 2) {
+        if (Math.floor(Math.random() * 6) == 1) {
+          powerUpCount++;
+          switch (Math.floor(Math.random() * 1)) {
+            case 0:
+              addSprite(i % 5, Math.floor(i / 5), regen)
+              
+              break;
+          }
+        }
+      }
 
 
-var difficulty = 3 + roundCounter;
+    }
 
-for (var i = 0; i < 36; i++) {
-  if (playerPos == i) {
-
-    level += "p"
-
-    continue;
   }
-  if (i % 6 == 0) {
-    level += "\n";
-    continue;
-  }
-
-  if (Math.floor(Math.random() * 20 > difficulty)) {
-    level += "w";
-    continue;
-  }
-
-  level += "."
+  checkLevel(true)
 
 }
+
+var playerPos = Math.floor(Math.random() * 30);
+console.log(playerPos)
+
+
+var difficulty = 1 + roundCounter;
+
+generateLevel();
 
 addText("3", {
   x: 10,
@@ -88,7 +138,6 @@ addText("3", {
   color: color`5`
 })
 
-setMap(level)
 
 setPushables({
   [player]: []
@@ -111,30 +160,32 @@ onInput("s", () => {
 
 onInput("i", () => {
   addSprite(getFirst(player).x, getFirst(player).y, filled)
-
-  checkLevel();
+  console.log("diffculty: " + difficulty)
+  checkLevel(false);
 })
 
-function checkLevel() {
+function checkLevel(isGenerated) {
   var x = 0;
   var y = 0;
   for (var i = 0; i < 30; i++) {
-    x++;
-    if (x > 4) {
-      x = 0
-      y++;
-    }
-    console.log(x + " " + y);
 
-    if(!getTile(x,y).includes(filled)) return;
+    //console.log(getTile(i % 5,y = Math.floor(i / 5)).some(sprite => sprite.type == filled))
+    if (!getTile(i % 5, y = Math.floor(i / 5)).some(sprite => sprite.type == filled)) return;
   }
-
+  if (isGenerated) {
+    generateLevel();
+    roundCounter -= 1;
+    return;
+  }
   clearText()
   addText("hello", {
     x: 10,
     y: 4,
     color: color`3`
   })
+  setTimeout(() => {
+    generateLevel()
+  }, 550)
 }
 
 
