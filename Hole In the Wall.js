@@ -12,7 +12,8 @@ const player = "p"
 const filled = "w"
 const regen = "r"
 var roundCounter = 0;
-var powerUps
+var powerUps = []
+var stopCountdown = false;
 setLegend(
   [player, bitmap`
 1111111111111111
@@ -31,7 +32,7 @@ setLegend(
 130..........031
 1333333333333331
 1111111111111111`],
-    [regen, bitmap`
+  [regen, bitmap`
 ................
 ................
 ................
@@ -102,7 +103,7 @@ function generateLevel() {
     //   continue;
     // }
 
-    if (Math.floor(Math.random() * 20 > difficulty)) {
+    if (Math.floor(Math.random() * 13 > difficulty)) {
       addSprite(i % 5, Math.floor(i / 5), filled)
       if (powerUpCount < 2) {
         if (Math.floor(Math.random() * 6) == 1) {
@@ -110,7 +111,7 @@ function generateLevel() {
           switch (Math.floor(Math.random() * 1)) {
             case 0:
               addSprite(i % 5, Math.floor(i / 5), regen)
-              
+
               break;
           }
         }
@@ -121,6 +122,9 @@ function generateLevel() {
 
   }
   checkLevel(true)
+constructPowerUpString()
+    stopCountdown = false
+startCountdown(8) 
 
 }
 
@@ -132,30 +136,107 @@ var difficulty = 1 + roundCounter;
 
 generateLevel();
 
-addText("3", {
-  x: 10,
-  y: 4,
-  color: color`5`
+
+
+function pickPowerUp() {
+  if (powerUps.length < 3) {
+    var pX = getFirst(player).x
+    var pY = getFirst(player).y
+    //Regen Level
+    if (getTile(getFirst(player).x, getFirst(player).y).some(sprite => sprite.type == regen)) {
+      clearTile(pX, pY)
+      addSprite(pX, pY, player)
+      addSprite(pX, pY, filled)
+      powerUps += "r";
+    }
+  }
+  constructPowerUpString()
+}
+//First ability
+
+function constructPowerUpString(){
+  var string = "Powerups:"
+  for(var i = 0; i < powerUps.length; i++){
+    string += powerUps[i] + " "
+  }
+clearText();
+   addText(string, {
+    x: 3,
+    y: 14,
+    color: color`5`
+  })
+}
+
+
+function usePowerUps(aN){
+  if(aN > powerUps.length - 1 ) return;
+  if(powerUps[aN] == "r"){
+    generateLevel()
+        difficulty -= 1;
+
+  }
+
+
+  if(powerUps.length == 1){
+    powerUps = []
+  }
+
+    if(powerUps.length == 2){
+      if(aN == 0)
+          powerUps = [powerUps[aN + 1]];
+      if(aN == 1)
+          powerUps = [powerUps[aN - 1]];
+  } 
+  if(powerUps.length == 3){
+      if(aN == 0)
+          powerUps = [powerUps[aN + 1], powerUps[aN + 2]];
+      if(aN == 1)
+          powerUps = [powerUps[aN - 1], powerUps[aN+ 1]];
+     if(aN == 2)
+          powerUps = [powerUps[aN - 2], powerUps[aN - 1]];
+  } 
+  
+constructPowerUpString()
+}
+
+onInput("j", () => {
+usePowerUps(0)
 })
+//Second ability
 
+onInput("k", () => {
+usePowerUps(1)
 
+})
+//Third ability
+
+onInput("l", () => {
+usePowerUps(2)
+
+})
+getFirst(player).x
+getFirst(player).y
 setPushables({
   [player]: []
 })
 onInput("d", () => {
   getFirst(player).x += 1
+  pickPowerUp()
 })
 
 onInput("a", () => {
   getFirst(player).x -= 1
+  pickPowerUp()
 })
 
 onInput("w", () => {
   getFirst(player).y -= 1
+  pickPowerUp()
 })
 
 onInput("s", () => {
   getFirst(player).y += 1
+  pickPowerUp()
 })
 
 onInput("i", () => {
@@ -178,7 +259,7 @@ function checkLevel(isGenerated) {
     return;
   }
   clearText()
-  addText("hello", {
+  addText("Good Job", {
     x: 10,
     y: 4,
     color: color`3`
@@ -187,7 +268,45 @@ function checkLevel(isGenerated) {
     generateLevel()
   }, 550)
 }
+async function startCountdown(seconds) {
+  for (let i = seconds; i > 0; i--) {
+    if(stopCountdown) return;
+    clearText()
+    addText(`Countdown: ${i}`, {
+      x: 4,
+      y: 2,
+      color: color`5`
+    })
+    await new Promise(resolve => setTimeout(resolve, 1000)) 
+  }if(!stopCountdown){
+  clearText()
+  addText("Fail!\n Score: "+ roundCounter - 1, {
+    x: 4,
+    y: 2,
+    color: color`5`
+  })
+setTimeout(() => {
+    resetGame()
+  }, 550)
+}
+}
+function resetGame(){
+  
+  var roundCounter = 0;
+var powerUps = []
+var difficulty = 1 + roundCounter;
+  var level = map`
+.....
+.....
+.....
+.....
+.....
+.....`
+generateLevel()
+  stopCountdown = true
+}
 
+startCountdown(8) 
 
 afterInput(() => {
 
